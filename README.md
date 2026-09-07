@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="extra/images/logo.png" width=200 height=200/><br>
+  <img src="extra/images/logo.png?v=2" width=200 height=200/><br>
   Photon
 </h1>
 
