@@ -6,7 +6,4 @@
     </linearGradient>
   </defs>
   <path d="M77 39h55c38 0 62 27 62 61s-24 61-62 61H77l20-22h34c22 0 36-16 36-39s-14-39-36-39H97Z" fill="url(#photon-body)" stroke="url(#photon-body)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="119" cy="96" r="5" fill="#0b1220"/>
-  <circle cx="146" cy="96" r="5" fill="#0b1220"/>
-  <path d="M123 118c4 5 8 7 12 7s8-2 12-7" fill="none" stroke="#0b1220" stroke-width="2" stroke-linecap="round"/>
 </svg>

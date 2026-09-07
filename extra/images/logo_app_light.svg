@@ -10,9 +10,6 @@
     <rect x="60.691" y="60.691" width="378.619" height="378.619" rx="40" ry="40" style="stroke: rgb(0, 0, 0); stroke-width: 0px; fill: url(#gradient-1); fill-rule: nonzero;"/>
     <g transform="translate(250,250) scale(1.4) translate(-129.5,-99.5)">
       <path d="M77 39h55c38 0 62 27 62 61s-24 61-62 61H77l20-22h34c22 0 36-16 36-39s-14-39-36-39H97Z" style="fill: rgb(28, 27, 31); stroke: rgb(28, 27, 31);" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle cx="119" cy="96" r="5" style="fill: rgb(255, 255, 255);"/>
-      <circle cx="146" cy="96" r="5" style="fill: rgb(255, 255, 255);"/>
-      <path d="M123 118c4 5 8 7 12 7s8-2 12-7" fill="none" style="stroke: rgb(255, 255, 255);" stroke-width="2" stroke-linecap="round"/>
     </g>
   </g>
 </svg>
