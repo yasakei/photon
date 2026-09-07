@@ -7,13 +7,13 @@ use std::{
         Arc,
         mpsc::{Sender, channel},
     },
-    time::Instant,
+    time::{Duration, Instant},
 };
 
 use alacritty_terminal::vte::ansi::Handler;
 use floem::{
     ViewId,
-    action::{TimerToken, open_file, remove_overlay},
+    action::{TimerToken, exec_after, open_file, remove_overlay},
     ext_event::{create_ext_action, create_signal_from_channel},
     file::FileDialogOptions,
     keyboard::Modifiers,
@@ -64,7 +64,7 @@ use crate::{
     db::PhotonDb,
     debug::{DapData, PhotonBreakpoint, RunDebugMode, RunDebugProcess},
     doc::DocContent,
-    editor::location::{EditorLocation, EditorPosition},
+    editor::{EditorData, location::{EditorLocation, EditorPosition}},
     editor_tab::EditorTabChild,
     file_explorer::data::FileExplorerData,
     find::Find,
@@ -774,11 +774,88 @@ impl WindowTabData {
         }
         let delta = self.editor_zoom_delta.get_untracked();
         let size = (base as i32 + delta).clamp(6, 32) as usize;
-        let mut new_config = self.common.config.get_untracked();
+        let old_config = self.common.config.get_untracked();
+        let old_line_height = old_config.editor.line_height() as f64;
+        let mut new_config: Arc<PhotonConfig> = old_config.clone();
         Arc::make_mut(&mut new_config)
             .editor
             .set_font_size(size);
+        let new_line_height = new_config.editor.line_height() as f64;
+        let debug = env::var("PHOTON_EDITOR_DEBUG").is_ok();
+
+        // Keep the top visible line stable across the zoom so the view never
+        // jumps toward the top of the file: with a bigger line height the
+        // unchanged pixel scroll offset would map to an earlier line, and
+        // the text being read would drop out of view. The cursor itself is
+        // deliberately left alone, so it naturally moves down as the text
+        // expands (and up when shrinking).
+        let anchors: Vec<(EditorData, f64, f64)> = if old_line_height > 0.0
+            && (new_line_height - old_line_height).abs() > f64::EPSILON
+        {
+            self.main_split
+                .editors
+                .0
+                .with_untracked(|m| m.values().cloned().collect::<Vec<_>>())
+                .into_iter()
+                .map(|editor_data| {
+                    let prev_y0 =
+                        editor_data.editor.viewport.get_untracked().y0;
+                    let top_vline =
+                        (prev_y0 / old_line_height).floor().max(0.0);
+                    let target_y0 = top_vline * new_line_height;
+                    (editor_data, prev_y0, target_y0)
+                })
+                .collect()
+        } else {
+            Vec::new()
+        };
+        // Only the latest zoom's correction may apply, so rapid zooms don't
+        // fight each other (closures run FIFO, last one wins).
+        let zoom_delta_sig = self.editor_zoom_delta;
+
         self.set_config.set(new_config);
+
+        if debug {
+            for (_, prev_y0, target_y0) in &anchors {
+                eprintln!(
+                    "[zoom] lh {old_line_height:.2}->{new_line_height:.2} \
+                     y0 {prev_y0:.0} -> {target_y0:.0}"
+                );
+            }
+        }
+
+        // The scroll container only learns the new content size during
+        // layout, so correcting immediately would be clamped to the old
+        // bounds on zoom-in. Re-apply once layout has settled. If a newer
+        // zoom happened meanwhile, or the user scrolled, leave it alone.
+        if !anchors.is_empty() {
+            exec_after(Duration::from_millis(50), move |_| {
+                if zoom_delta_sig.get_untracked() != delta {
+                    return;
+                }
+                for (editor_data, prev_y0, target_y0) in anchors {
+                    let editor = &editor_data.editor;
+                    let cur = editor.viewport.get_untracked();
+                    if (cur.y0 - prev_y0).abs() >= 1.0 {
+                        // Viewport moved since the zoom (user scrolled, or
+                        // the container clamped on zoom-out): don't fight it.
+                        continue;
+                    }
+                    let diff = target_y0 - cur.y0;
+                    if debug {
+                        eprintln!(
+                            "[zoom:+50ms] y0 {:.0} target {target_y0:.0}",
+                            cur.y0,
+                        );
+                    }
+                    if diff.abs() > 0.5 {
+                        editor
+                            .scroll_to
+                            .set(Some(Vec2::new(cur.x0, target_y0)));
+                    }
+                }
+            });
+        }
     }
 
     pub fn reload_config(&self) {

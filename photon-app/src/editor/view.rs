@@ -1903,10 +1903,15 @@ fn editor_gutter(
     stack((
         stack((
             empty().style(move |s| s.width(icon_total_width() * 2.0 - 8.0)),
+            // Width sizer: reserves gutter space for the widest line number.
+            // The text itself must never paint (it would show the total line
+            // count, e.g. "46", over the first row), so it is transparent
+            // while still contributing its size to layout.
             label(move || {
                 let doc = doc.get();
                 doc.buffer.with(|b| b.last_line() + 1).to_string()
-            }),
+            })
+            .style(|s| s.color(Color::TRANSPARENT)),
             empty().style(move |s| s.width(gutter_padding_right.get())),
         ))
         .debug_name("Centered Last Line Count")

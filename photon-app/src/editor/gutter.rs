@@ -26,10 +26,14 @@ pub fn editor_gutter_view(
 ) -> EditorGutterView {
     let id = ViewId::new();
 
-    // Repaint gutter when Alt/Shift hold state, cursor, config or visible
-    // lines change. This is what makes the 0-9 quick-jump labels
+    // Repaint gutter when Alt/Shift hold state, cursor, config, visible
+    // lines or the viewport change. This is what makes the 0-9 quick-jump labels
     // appear/disappear instantly while holding/releasing Alt (and switch
     // direction with Shift), and keeps relative numbers in sync.
+    // Tracking the viewport as well guarantees the gutter can never be left
+    // showing a stale frame: any scroll settles into a repaint with the
+    // current screen lines (matters after font-size changes, which
+    // recompute line positions asynchronously).
     {
         let id = id;
         let alt_held = editor.common.window_common.alt_held;
@@ -37,12 +41,14 @@ pub fn editor_gutter_view(
         let cursor = editor.cursor();
         let config = editor.common.config;
         let screen_lines = editor.screen_lines();
+        let viewport = editor.viewport();
         create_effect(move |_| {
             alt_held.track();
             shift_held.track();
             cursor.track();
             config.track();
             screen_lines.track();
+            viewport.track();
             id.request_paint();
         });
     }
@@ -221,6 +227,15 @@ impl View for EditorGutterView {
                 // If it ends up outside the bounds of the file, stop trying to display line numbers
                 if line > last_line {
                     break;
+                }
+                // The gutter lives outside the scroll container, so nothing
+                // clips its painting: never draw a number that belongs
+                // off-screen, or a stale entry (e.g. from font-size change
+                // recompute) would paint a wrong number over the visible
+                // ones. In a healthy state every entry is on-screen, so this
+                // changes nothing visible.
+                if y + line_height <= viewport.y0 || y >= viewport.y1 {
+                    continue;
                 }
 
                 let (text, is_current) = if show_quick_jump {

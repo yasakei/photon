@@ -13,7 +13,10 @@ use floem::{
     views::{Decorators, dyn_stack, label, stack, svg},
 };
 use indexmap::IndexMap;
-use photon_core::mode::{Mode, VisualMode};
+use photon_core::{
+    buffer::rope_text::RopeText,
+    mode::{Mode, VisualMode},
+};
 use lsp_types::{DiagnosticSeverity, ProgressToken};
 
 use crate::{
@@ -324,17 +327,30 @@ pub fn status(
                 if let Some(editor) = editor.get() {
                     let mut status = String::new();
                     let cursor = editor.cursor().get();
-                    if let Some((line, column, character)) = editor
+                    if let Some((line, column, character, total_lines)) = editor
                         .doc_signal()
                         .get()
                         .buffer
-                        .with(|buffer| cursor.get_line_col_char(buffer))
+                        .with(|buffer| {
+                            cursor.get_line_col_char(buffer).map(
+                                |(line, column, character)| {
+                                    (
+                                        line,
+                                        column,
+                                        character,
+                                        buffer.last_line() + 1,
+                                    )
+                                },
+                            )
+                        })
                     {
                         status = format!(
-                            "Ln {}, Col {}, Char {}",
+                            "Ln {}, Col {}, Char {} ({} {})",
                             line + 1,
                             column + 1,
                             character,
+                            total_lines,
+                            if total_lines == 1 { "line" } else { "lines" },
                         );
                     }
                     if let Some(selection) = cursor.get_selection() {
