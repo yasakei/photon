@@ -9,19 +9,19 @@ test_cmd() {
 }
 
 # proxy version
-lapce_new_ver="${1}"
+photon_new_ver="${1}"
 # proxy directory
 # eval to resolve '~' into proper user dir
-eval lapce_dir="'${2}'"
+eval photon_dir="'${2}'"
 
-case "${lapce_new_ver}" in
+case "${photon_new_ver}" in
   v*)
-    lapce_new_version=$(echo "${lapce_new_ver}" | cut -d'v' -f2)
-    lapce_new_ver_tag="${lapce_new_ver}"
+    photon_new_version=$(echo "${photon_new_ver}" | cut -d'v' -f2)
+    photon_new_ver_tag="${photon_new_ver}"
   ;;
   nightly*)
-    lapce_new_version="${lapce_new_ver}"
-    lapce_new_ver_tag=$(echo ${lapce_new_ver} | cut -d '-' -f1)
+    photon_new_version="${photon_new_ver}"
+    photon_new_ver_tag=$(echo ${photon_new_ver} | cut -d '-' -f1)
   ;;
   *)
     printf 'Unknown version\n'
@@ -29,17 +29,17 @@ case "${lapce_new_ver}" in
   ;;
 esac
 
-if [ -e "${lapce_dir}/lapce" ]; then
-  lapce_installed_ver=$("${lapce_dir}/lapce" --version | cut -d' ' -f2)
+if [ -e "${photon_dir}/photon" ]; then
+  photon_installed_ver=$("${photon_dir}/photon" --version | cut -d' ' -f2)
 
-  printf '[DEBUG]: Current proxy version: %s\n' "${lapce_installed_ver}"
-  printf '[DEBUG]: New proxy version: %s\n' "${lapce_new_version}"
-  if [ "${lapce_installed_ver}" = "${lapce_new_version}" ]; then
+  printf '[DEBUG]: Current proxy version: %s\n' "${photon_installed_ver}"
+  printf '[DEBUG]: New proxy version: %s\n' "${photon_new_version}"
+  if [ "${photon_installed_ver}" = "${photon_new_version}" ]; then
     printf 'Proxy already exists\n'
     exit 0
   else
     printf 'Proxy outdated. Replacing proxy\n'
-    rm "${lapce_dir}/lapce"
+    rm "${photon_dir}/photon"
   fi
 fi
 
@@ -71,34 +71,34 @@ case $(uname -m) in
   ;;
 esac
 
-lapce_download_url="https://github.com/lapce/lapce/releases/download/${lapce_new_ver_tag}/lapce-proxy-${os_name}-${arch_name}.gz"
+photon_download_url="https://github.com/lapce/lapce/releases/download/${photon_new_ver_tag}/photon-proxy-${os_name}-${arch_name}.gz"
 
-printf 'Creating "%s"\n' "${lapce_dir}"
-mkdir -p "${lapce_dir}"
-cd "${lapce_dir}"
+printf 'Creating "%s"\n' "${photon_dir}"
+mkdir -p "${photon_dir}"
+cd "${photon_dir}"
 
 if test_cmd 'curl'; then
   # How old curl has these options? we'll find out
   printf 'Downloading using curl\n'
-  curl --proto '=https' --tlsv1.2 -LfS -O "${lapce_download_url}"
-  # curl --proto '=https' --tlsv1.2 -LZfS -o "${tmp_dir}/lapce-proxy-${os_name}-${arch_name}.gz" "${lapce_download_url}"
+  curl --proto '=https' --tlsv1.2 -LfS -O "${photon_download_url}"
+  # curl --proto '=https' --tlsv1.2 -LZfS -o "${tmp_dir}/photon-proxy-${os_name}-${arch_name}.gz" "${photon_download_url}"
 elif test_cmd 'wget'; then
   printf 'Downloading using wget\n'
-  wget "${lapce_download_url}"
+  wget "${photon_download_url}"
 else
   printf 'curl/wget not found, failed to download proxy\n'
   exit 1
 fi
 
 printf 'Decompressing gzip\n'
-gzip -df "${lapce_dir}/lapce-proxy-${os_name}-${arch_name}.gz"
+gzip -df "${photon_dir}/photon-proxy-${os_name}-${arch_name}.gz"
 
 printf 'Renaming proxy \n'
-mv -v "${lapce_dir}/lapce-proxy-${os_name}-${arch_name}" "${lapce_dir}/lapce"
+mv -v "${photon_dir}/photon-proxy-${os_name}-${arch_name}" "${photon_dir}/photon"
 
 printf 'Making it executable\n'
-chmod +x "${lapce_dir}/lapce"
+chmod +x "${photon_dir}/photon"
 
-printf 'lapce-proxy installed\n'
+printf 'photon-proxy installed\n'
 
 exit 0

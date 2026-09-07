@@ -1,10 +1,10 @@
 #:schema ../extra/schemas/icon-theme.json
 
 [icon-theme]
-name = "Lapce Codicons"
+name = "Photon Codicons"
 
 [icon-theme.ui]
-"logo" = "lapce_logo.svg"
+"logo" = "photon_logo.svg"
 "menu" = "menu.svg"
 "link" = "link.svg"
 "error" = "error.svg"

@@ -7,7 +7,7 @@ on:
     paths:
       - Cargo.toml
       - Cargo.lock
-      - lapce-**
+      - photon-**
       - .github/workflows/ci.yml
   workflow_dispatch:
 
@@ -57,14 +57,14 @@ jobs:
 
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
-          name: lapce-${{ matrix.os }}
+          name: photon-${{ matrix.os }}
           path: |
-            target/ci/lapce*
+            target/ci/photon*
           retention-days: 1
 
       - name: Build as portable
         if: startsWith(matrix.os, 'windows')
-        run: cargo build --profile ci --frozen --features lapce-app/portable
+        run: cargo build --profile ci --frozen --features photon-app/portable
 
       - name: Free space on Windows
         if: startsWith(matrix.os, 'windows')

@@ -326,6 +326,91 @@ key = "alt+shift+down"
 command = "duplicate_line_down"
 mode = "i"
 
+# --------------------------------- Alt Quick Jump -----------------------------------
+# Hold Alt to show 0-9 jump labels in the gutter (toggle via
+# `editor.enable-alt-quick-jump`). Alt+0-9 jumps to the end of a line above,
+# Alt+Shift+0-9 jumps below, Alt+0 stays on the current line end.
+
+[[keymaps]]
+key = "alt+0"
+command = "quick_jump_0"
+
+[[keymaps]]
+key = "alt+1"
+command = "quick_jump_1"
+
+[[keymaps]]
+key = "alt+2"
+command = "quick_jump_2"
+
+[[keymaps]]
+key = "alt+3"
+command = "quick_jump_3"
+
+[[keymaps]]
+key = "alt+4"
+command = "quick_jump_4"
+
+[[keymaps]]
+key = "alt+5"
+command = "quick_jump_5"
+
+[[keymaps]]
+key = "alt+6"
+command = "quick_jump_6"
+
+[[keymaps]]
+key = "alt+7"
+command = "quick_jump_7"
+
+[[keymaps]]
+key = "alt+8"
+command = "quick_jump_8"
+
+[[keymaps]]
+key = "alt+9"
+command = "quick_jump_9"
+
+[[keymaps]]
+key = "alt+shift+0"
+command = "quick_jump_0"
+
+[[keymaps]]
+key = "alt+shift+1"
+command = "quick_jump_1"
+
+[[keymaps]]
+key = "alt+shift+2"
+command = "quick_jump_2"
+
+[[keymaps]]
+key = "alt+shift+3"
+command = "quick_jump_3"
+
+[[keymaps]]
+key = "alt+shift+4"
+command = "quick_jump_4"
+
+[[keymaps]]
+key = "alt+shift+5"
+command = "quick_jump_5"
+
+[[keymaps]]
+key = "alt+shift+6"
+command = "quick_jump_6"
+
+[[keymaps]]
+key = "alt+shift+7"
+command = "quick_jump_7"
+
+[[keymaps]]
+key = "alt+shift+8"
+command = "quick_jump_8"
+
+[[keymaps]]
+key = "alt+shift+9"
+command = "quick_jump_9"
+
 # ------------------------------------ Modal -----------------------------------------
 
 [[keymaps]]

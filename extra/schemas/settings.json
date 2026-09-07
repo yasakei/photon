@@ -176,6 +176,12 @@
                 },
                 "custom-titlebar": {
                     "type": "boolean"
+                },
+                "enable-discord-presence": {
+                    "type": "boolean"
+                },
+                "window-transparent": {
+                    "type": "boolean"
                 }
             },
             "required": [],
@@ -279,6 +285,9 @@
                     "type": "boolean"
                 },
                 "atomic-soft-tabs": {
+                    "type": "boolean"
+                },
+                "enable-alt-quick-jump": {
                     "type": "boolean"
                 }
             },

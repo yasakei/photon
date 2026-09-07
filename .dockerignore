@@ -1,9 +1,9 @@
 .github
 .vscode
-.lapce
+.photon
 docs
 extra/linux/docker
 extra/macos
 extra/windows
 target
-lapce.spec
+photon.spec

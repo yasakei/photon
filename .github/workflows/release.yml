@@ -75,23 +75,23 @@ jobs:
       - name: Crate msi installer
         run: |
           candle.exe -arch "x64" -ext WixUIExtension -ext WixUtilExtension \
-            -out "./lapce.wixobj" "extra/windows/wix/lapce.wxs"
+            -out "./photon.wixobj" "extra/windows/wix/photon.wxs"
 
           light.exe -ext WixUIExtension -ext WixUtilExtension \
-            -out "./Lapce-windows.msi" -sice:ICE61 -sice:ICE91 \
-            "./lapce.wixobj"
+            -out "./Photon-windows.msi" -sice:ICE61 -sice:ICE91 \
+            "./photon.wixobj"
 
       - name: Create portable
         shell: pwsh
         run: |
-          cargo build --profile release-lto --features lapce-app/portable
-          Compress-Archive ./target/release-lto/lapce.exe ./Lapce-windows-portable.zip
+          cargo build --profile release-lto --features photon-app/portable
+          Compress-Archive ./target/release-lto/photon.exe ./Photon-windows-portable.zip
 
-      - name: Create lapce-proxy archive
+      - name: Create photon-proxy archive
         shell: pwsh
         run: |
-          $file = [System.IO.File]::Open((Join-Path $PWD '.\target\release-lto\lapce-proxy.exe'), [System.IO.FileMode]::Open)
-          $archive = [System.IO.File]::Create((Join-Path $PWD '.\lapce-proxy-windows-x86_64.gz'))
+          $file = [System.IO.File]::Open((Join-Path $PWD '.\target\release-lto\photon-proxy.exe'), [System.IO.FileMode]::Open)
+          $archive = [System.IO.File]::Create((Join-Path $PWD '.\photon-proxy-windows-x86_64.gz'))
           $compressor = [System.IO.Compression.GZipStream]::new($archive, [System.IO.Compression.CompressionMode]::Compress)
           $file.CopyTo($compressor)
           Start-Sleep -Seconds 10
@@ -99,11 +99,11 @@ jobs:
 
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
-          name: lapce-windows
+          name: photon-windows
           path: |
-            ./lapce-proxy-windows-*.gz
-            ./Lapce-windows-portable.zip
-            ./Lapce-windows.msi
+            ./photon-proxy-windows-*.gz
+            ./Photon-windows-portable.zip
+            ./Photon-windows.msi
           retention-days: 1
 
   linux:
@@ -122,15 +122,15 @@ jobs:
 
       - name: Gzip
         run: |
-          mkdir Lapce
-          cp ./target/linux_amd64/lapce Lapce/
-          tar -zcvf ./lapce-linux-amd64.tar.gz Lapce
+          mkdir Photon
+          cp ./target/linux_amd64/photon Photon/
+          tar -zcvf ./photon-linux-amd64.tar.gz Photon
 
-          rm -rf Lapce
+          rm -rf Photon
 
-          mkdir Lapce
-          cp ./target/linux_arm64/lapce Lapce/
-          tar -zcvf ./lapce-linux-arm64.tar.gz Lapce
+          mkdir Photon
+          cp ./target/linux_arm64/photon Photon/
+          tar -zcvf ./photon-linux-arm64.tar.gz Photon
 
       - name: Fetch dependencies
         run: cargo fetch --locked
@@ -143,9 +143,9 @@ jobs:
 
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
-          name: lapce-linux
+          name: photon-linux
           path: |
-            ./lapce-linux-*.tar.gz
+            ./photon-linux-*.tar.gz
             ./vendor.tar.gz
           retention-days: 1
 
@@ -180,7 +180,7 @@ jobs:
 
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
-          name: lapce-${{ matrix.os-name }}-${{ matrix.os-version }}
+          name: photon-${{ matrix.os-name }}-${{ matrix.os-version }}
           path: |
             ./target/linux_*/*
           retention-days: 1
@@ -210,12 +210,12 @@ jobs:
 
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
-          name: lapce-${{ matrix.os-name }}-${{ matrix.os-version }}
+          name: photon-${{ matrix.os-name }}-${{ matrix.os-version }}
           path: |
             ./target/*
           retention-days: 1
 
-  lapce-proxy:
+  photon-proxy:
     runs-on: ubuntu-latest
     needs: tagname
     env:
@@ -234,21 +234,21 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a
 
-      - name: Build lapce-proxy binary
+      - name: Build photon-proxy binary
         run: |
           docker buildx create --driver=docker-container --use
           docker buildx bake --pull ${{ matrix.os-name }}-${{ matrix.os-version }}
 
       - name: Gzip
         run: |
-          gzip -c ./target/linux_amd64/lapce-proxy > ./lapce-proxy-linux-x86_64.gz
-          gzip -c ./target/linux_arm64/lapce-proxy > ./lapce-proxy-linux-aarch64.gz
+          gzip -c ./target/linux_amd64/photon-proxy > ./photon-proxy-linux-x86_64.gz
+          gzip -c ./target/linux_arm64/photon-proxy > ./photon-proxy-linux-aarch64.gz
 
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
-          name: lapce-proxy-linux
+          name: photon-proxy-linux
           path: |
-            ./lapce-proxy-linux-*.gz
+            ./photon-proxy-linux-*.gz
           retention-days: 1
 
   macos:
@@ -281,40 +281,40 @@ jobs:
 
       - name: Rename
         run: |
-          cp ./target/release-lto/macos/Lapce.dmg ./target/release-lto/macos/Lapce-macos.dmg
+          cp ./target/release-lto/macos/Photon.dmg ./target/release-lto/macos/Photon-macos.dmg
 
-      - name: Gzip lapce-proxy
+      - name: Gzip photon-proxy
         run: |
-          gzip -c ./target/x86_64-apple-darwin/release-lto/lapce-proxy > ./target/release-lto/macos/lapce-proxy-darwin-x86_64.gz
-          gzip -c ./target/aarch64-apple-darwin/release-lto/lapce-proxy > ./target/release-lto/macos/lapce-proxy-darwin-aarch64.gz
+          gzip -c ./target/x86_64-apple-darwin/release-lto/photon-proxy > ./target/release-lto/macos/photon-proxy-darwin-x86_64.gz
+          gzip -c ./target/aarch64-apple-darwin/release-lto/photon-proxy > ./target/release-lto/macos/photon-proxy-darwin-aarch64.gz
 
       - name: Notarize Release Build
         uses: lando/notarize-action@b5c3ef16cf2fbcf2af26dc58c90255ec242abeed
         with:
-          product-path: "./target/release-lto/macos/Lapce-macos.dmg"
+          product-path: "./target/release-lto/macos/Photon-macos.dmg"
           appstore-connect-username: ${{ secrets.NOTARIZE_USERNAME }}
           appstore-connect-password: ${{ secrets.NOTARIZE_PASSWORD }}
           appstore-connect-team-id: CYSGAZFR8D
-          primary-bundle-id: "io.lapce"
+          primary-bundle-id: "io.photon"
           verbose: true
 
       - name: "Staple Release Build"
-        uses: lapce/xcode-staple@062485d6eeafe841c18a412f012e80f49e23c517
+        uses: photon/xcode-staple@062485d6eeafe841c18a412f012e80f49e23c517
         with:
-          product-path: "./target/release-lto/macos/Lapce-macos.dmg"
+          product-path: "./target/release-lto/macos/Photon-macos.dmg"
 
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
         with:
-          name: lapce-macos
+          name: photon-macos
           path: |
-            ./target/release-lto/macos/lapce-proxy-darwin-*.gz
-            ./target/release-lto/macos/Lapce-macos.dmg
+            ./target/release-lto/macos/photon-proxy-darwin-*.gz
+            ./target/release-lto/macos/Photon-macos.dmg
           retention-days: 3
 
   publish:
     needs:
       - linux
-      - lapce-proxy
+      - photon-proxy
       - deb
       - rpm
       - windows
@@ -346,7 +346,7 @@ jobs:
       - if: env.TAG_NAME == 'nightly'
         run: |
           {
-            echo 'SUBJECT=Lapce development build'
+            echo 'SUBJECT=Photon development build'
             echo 'PRERELEASE=--prerelease'
           } | tee -a $GITHUB_ENV
 
@@ -359,7 +359,7 @@ jobs:
       - if: env.TAG_NAME != 'nightly'
         run: |
           {
-            echo 'SUBJECT=Lapce release build'
+            echo 'SUBJECT=Photon release build'
             echo 'PRERELEASE='
           } | tee -a $GITHUB_ENV
 
@@ -369,10 +369,10 @@ jobs:
           DEBUG: api
         run: |
           gh release create $TAG_NAME $PRERELEASE --title "$TAG_NAME" --target $GITHUB_SHA \
-            lapce-macos/* \
-            lapce-linux/* \
-            lapce-debian*/*/* \
-            lapce-ubuntu*/*/* \
-            lapce-fedora*/* \
-            lapce-proxy-linux/* \
-            lapce-windows/*
+            photon-macos/* \
+            photon-linux/* \
+            photon-debian*/*/* \
+            photon-ubuntu*/*/* \
+            photon-fedora*/* \
+            photon-proxy-linux/* \
+            photon-windows/*

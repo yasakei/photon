@@ -104,20 +104,20 @@ export PKG_CONFIG="$(xx-clang --print-prog-name=pkg-config)"
 xx-cargo build \
   --verbose \
   --frozen \
-  --bin lapce-proxy \
+  --bin photon-proxy \
   --profile release-lto \
   --no-default-features
 
-xx-verify "${CARGO_TARGET_DIR}"/"$(xx-cargo --print-target-triple)"/release-lto/lapce-proxy
+xx-verify "${CARGO_TARGET_DIR}"/"$(xx-cargo --print-target-triple)"/release-lto/photon-proxy
 
 mkdir -p /target
-mv -v "${CARGO_TARGET_DIR}"/"$(xx-cargo --print-target-triple)"/release-lto/lapce-proxy /usr/local/bin/
+mv -v "${CARGO_TARGET_DIR}"/"$(xx-cargo --print-target-triple)"/release-lto/photon-proxy /usr/local/bin/
 EOF
 
 FROM build-prep AS dev
 
 FROM scratch AS binary
-COPY --from=build /usr/local/bin/lapce-proxy .
+COPY --from=build /usr/local/bin/photon-proxy .
 
 FROM scratch AS cross-binary
-COPY --from=build /usr/local/bin/lapce-proxy .
+COPY --from=build /usr/local/bin/photon-proxy .

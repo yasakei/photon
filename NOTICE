@@ -1,0 +1,18 @@
+Photon — a rebrand of Lapce
+
+Photon is a derivative (rebrand) of Lapce (https://github.com/lapce/lapce).
+
+* Original work: Copyright Lapce authors (Dongdong Zhou <dzhou121@gmail.com> and contributors).
+* Original homepage/docs: https://lapce.dev, https://docs.lapce.dev
+* License: Apache License, Version 2.0 — see LICENSE in this repository.
+  This LICENSE file is kept intact and unmodified from upstream.
+
+Modifications for Photon consist of renaming user-visible and internal
+identifiers from Lapce to Photon (binaries `photon` / `photon-proxy`,
+bundle IDs `dev.photon.photon` / `io.photon`, crates `photon-*`, config
+paths, etc.).
+
+Per Apache-2.0 §4, all copyright, patent, trademark and attribution notices
+from the Source form of the Work have been retained. Upstream dependency
+URLs (e.g. github.com/lapce/*) and the lapce-xi-rope crate name were
+intentionally left unchanged where they refer to external projects.

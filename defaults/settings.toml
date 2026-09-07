@@ -2,14 +2,16 @@
 
 [core]
 modal = false
-color-theme = "Lapce Dark"
-icon-theme = "Lapce Codicons"
+color-theme = "Photon Dark"
+icon-theme = "Photon Codicons"
 custom-titlebar = true
 file-explorer-double-click = false
 auto-reload-plugin = false
+enable-discord-presence = true
+window-transparent = true
 
 [editor]
-font-family = "monospace"
+font-family = "JetBrains Mono"
 font-size = 13
 code-glance-font-size = 2
 line-height = 1.5
@@ -65,9 +67,10 @@ scroll-speed-modifier = 1
 bracket-pair-colorization = false
 bracket-colorization-limit = 30000
 files-exclude = "**/{.git,.svn,.hg,CVS,.DS_Store,Thumbs.db}" # Glob patterns
+enable-alt-quick-jump = true
 
 [terminal]
-font-family = ""
+font-family = "JetBrains Mono"
 font-size = 0
 line-height = 0
 
@@ -87,7 +90,7 @@ default = {}
 
 [ui]
 scale = +1.0
-font-family = ""
+font-family = "JetBrains Mono"
 font-size = 13
 icon-size = 0
 header-height = 36

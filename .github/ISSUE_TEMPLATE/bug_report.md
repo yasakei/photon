@@ -7,9 +7,9 @@ assignees: ''
 
 ---
 
-## Lapce Version
+## Photon Version
 
-The Lapce version you are using, which can be found in "About Lapce" at the top right settings icon. 
+The Photon version you are using, which can be found in "About Photon" at the top right settings icon. 
 
 ## System information
 

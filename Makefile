@@ -1,4 +1,4 @@
-# This Makefile is intended *only* for building macOS binaries of Lapce.
+# This Makefile is intended *only* for building macOS binaries of Photon.
 # It uses macOS-specific tools like `lipo`, `codesign`, and `hdiutil`,
 # and requires that a valid Apple Developer signing identity is installed
 # and available in the system Keychain under the fingerprint set in 
@@ -6,21 +6,21 @@
 #
 # See `docs/building-from-source.md`.
 
-TARGET = lapce
+TARGET = photon
 
 CODESIGN_IDENTITY = FAC8FBEA99169DC1980731029648F110628D6A32
 
 ASSETS_DIR = extra
 RELEASE_DIR = target/release-lto
 
-APP_NAME = Lapce.app
+APP_NAME = Photon.app
 APP_TEMPLATE = $(ASSETS_DIR)/macos/$(APP_NAME)
 APP_DIR = $(RELEASE_DIR)/macos
 APP_BINARY = $(RELEASE_DIR)/$(TARGET)
 APP_BINARY_DIR = $(APP_DIR)/$(APP_NAME)/Contents/MacOS
 APP_EXTRAS_DIR = $(APP_DIR)/$(APP_NAME)/Contents/Resources
 
-DMG_NAME = Lapce.dmg
+DMG_NAME = Photon.dmg
 DMG_DIR = $(RELEASE_DIR)/macos
 
 vpath $(TARGET) $(RELEASE_DIR)
@@ -47,8 +47,8 @@ $(TARGET)-universal:
 	@lipo target/{x86_64,aarch64}-apple-darwin/release-lto/$(TARGET) -create -output $(APP_BINARY)
 	/usr/bin/codesign -vvv --deep --entitlements $(ASSETS_DIR)/entitlements.plist --strict --options=runtime --force -s $(CODESIGN_IDENTITY) $(APP_BINARY)
 
-app: $(APP_NAME)-native ## Create a Lapce.app
-app-universal: $(APP_NAME)-universal ## Create a universal Lapce.app
+app: $(APP_NAME)-native ## Create a Photon.app
+app-universal: $(APP_NAME)-universal ## Create a universal Photon.app
 $(APP_NAME)-%: $(TARGET)-%
 	@mkdir -p $(APP_BINARY_DIR)
 	@mkdir -p $(APP_EXTRAS_DIR)
@@ -57,16 +57,16 @@ $(APP_NAME)-%: $(TARGET)-%
 	@touch -r "$(APP_BINARY)" "$(APP_DIR)/$(APP_NAME)"
 	@echo "Created '$(APP_NAME)' in '$(APP_DIR)'"
 	xattr -c $(APP_DIR)/$(APP_NAME)/Contents/Info.plist
-	xattr -c $(APP_DIR)/$(APP_NAME)/Contents/Resources/lapce.icns
+	xattr -c $(APP_DIR)/$(APP_NAME)/Contents/Resources/photon.icns
 	/usr/bin/codesign -vvv --deep  --entitlements $(ASSETS_DIR)/entitlements.plist --strict --options=runtime --force -s $(CODESIGN_IDENTITY) $(APP_DIR)/$(APP_NAME)
 
-dmg: $(DMG_NAME)-native ## Create a Lapce.dmg
-dmg-universal: $(DMG_NAME)-universal ## Create a universal Lapce.dmg
+dmg: $(DMG_NAME)-native ## Create a Photon.dmg
+dmg-universal: $(DMG_NAME)-universal ## Create a universal Photon.dmg
 $(DMG_NAME)-%: $(APP_NAME)-%
 	@echo "Packing disk image..."
 	@ln -sf /Applications $(DMG_DIR)/Applications
 	@hdiutil create $(DMG_DIR)/$(DMG_NAME) \
-		-volname "Lapce" \
+		-volname "Photon" \
 		-fs HFS+ \
 		-srcfolder $(APP_DIR) \
 		-ov -format UDZO

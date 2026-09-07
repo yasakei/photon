@@ -1,0 +1,20 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+
+Name=Photon
+Comment=Lightning-fast and powerful code editor written in Rust
+Categories=Development;IDE;
+GenericName=Code Editor
+StartupWMClass=photon
+
+Icon=dev.photon.photon
+Exec=photon %F
+Terminal=false
+MimeType=text/plain;inode/directory;
+Actions=new-window;
+
+[Desktop Action new-window]
+Name=New Window
+Exec=photon --new %F
+Icon=dev.photon.photon

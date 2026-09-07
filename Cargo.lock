@@ -1297,7 +1297,7 @@ version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bef552e6f588e446098f6ba40d89ac146c8c7b64aade83c051ee00bb5d2bc18d"
 dependencies = [
- "uuid",
+ "uuid 1.5.0",
 ]
 
 [[package]]
@@ -1367,6 +1367,19 @@ dependencies = [
  "libc",
  "redox_users",
  "winapi",
+]
+
+[[package]]
+name = "discord-rich-presence"
+version = "0.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a75db747ecd252c01bfecaf709b07fcb4c634adf0edb5fed47bc9c3052e7076b"
+dependencies = [
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "serde_repr",
+ "uuid 0.8.2",
 ]
 
 [[package]]
@@ -2989,172 +3002,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "lapce"
-version = "0.4.6"
-dependencies = [
- "lapce-app",
- "lapce-proxy",
-]
-
-[[package]]
-name = "lapce-app"
-version = "0.4.6"
-dependencies = [
- "Inflector",
- "alacritty_terminal",
- "anyhow",
- "backtrace",
- "base64 0.21.7",
- "bytemuck",
- "chrono",
- "clap",
- "config",
- "criterion",
- "crossbeam-channel",
- "dmg",
- "flate2",
- "floem",
- "fs_extra",
- "globset",
- "im",
- "include_dir",
- "indexmap",
- "interprocess",
- "itertools 0.12.1",
- "lapce-core",
- "lapce-proxy",
- "lapce-rpc",
- "lapce-xi-rope",
- "lsp-types",
- "notify",
- "nucleo",
- "once_cell",
- "open",
- "parking_lot",
- "percent-encoding",
- "pulldown-cmark",
- "rayon",
- "regex",
- "reqwest",
- "semver",
- "serde",
- "serde_json",
- "sha2",
- "smallvec",
- "structdesc",
- "strum 0.27.2",
- "strum_macros 0.27.2",
- "tar",
- "tempfile",
- "thiserror 1.0.69",
- "toml 0.8.2",
- "toml_edit 0.20.2",
- "tracing 0.2.0",
- "tracing-appender",
- "tracing-log",
- "tracing-subscriber",
- "unicode-width",
- "url",
- "windows-sys 0.60.2",
- "zip",
- "zstd",
-]
-
-[[package]]
-name = "lapce-core"
-version = "0.4.6"
-dependencies = [
- "ahash",
- "anyhow",
- "arc-swap",
- "directories",
- "floem-editor-core",
- "git2",
- "hashbrown 0.14.5",
- "include_dir",
- "itertools 0.12.1",
- "lapce-rpc",
- "lapce-xi-rope",
- "libloading",
- "lsp-types",
- "once_cell",
- "regex",
- "remain",
- "slotmap",
- "strum 0.27.2",
- "strum_macros 0.27.2",
- "thiserror 1.0.69",
- "tracing 0.2.0",
- "tree-sitter",
-]
-
-[[package]]
-name = "lapce-proxy"
-version = "0.4.6"
-dependencies = [
- "alacritty_terminal",
- "anyhow",
- "clap",
- "crossbeam-channel",
- "directories",
- "dyn-clone",
- "flate2",
- "floem-editor-core",
- "git2",
- "globset",
- "grep-matcher",
- "grep-regex",
- "grep-searcher",
- "ignore",
- "indexmap",
- "interprocess",
- "jsonrpc-lite",
- "lapce-core",
- "lapce-rpc",
- "lapce-xi-rope",
- "libc",
- "locale_config",
- "lsp-types",
- "notify",
- "parking_lot",
- "polling",
- "psp-types",
- "regex",
- "reqwest",
- "serde",
- "serde_json",
- "tar",
- "toml 0.8.2",
- "tracing 0.2.0",
- "tracing-log",
- "trash",
- "url",
- "walkdir",
- "wasi-common",
- "wasi-experimental-http-wasmtime",
- "wasmtime",
- "wasmtime-wasi",
- "zstd",
-]
-
-[[package]]
-name = "lapce-rpc"
-version = "0.4.6"
-dependencies = [
- "anyhow",
- "crossbeam-channel",
- "human-sort",
- "indexmap",
- "lapce-xi-rope",
- "lsp-types",
- "parking_lot",
- "serde",
- "serde_json",
- "tracing 0.2.0",
- "url",
-]
-
-[[package]]
 name = "lapce-xi-rope"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4142,6 +3989,173 @@ name = "percent-encoding"
 version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3148f5046208a5d56bcfc03053e3ca6334e51da8dfb19b6cdc8b306fae3283e"
+
+[[package]]
+name = "photon"
+version = "0.4.6"
+dependencies = [
+ "photon-app",
+ "photon-proxy",
+]
+
+[[package]]
+name = "photon-app"
+version = "0.4.6"
+dependencies = [
+ "Inflector",
+ "alacritty_terminal",
+ "anyhow",
+ "backtrace",
+ "base64 0.21.7",
+ "bytemuck",
+ "chrono",
+ "clap",
+ "config",
+ "criterion",
+ "crossbeam-channel",
+ "discord-rich-presence",
+ "dmg",
+ "flate2",
+ "floem",
+ "fs_extra",
+ "globset",
+ "im",
+ "include_dir",
+ "indexmap",
+ "interprocess",
+ "itertools 0.12.1",
+ "lapce-xi-rope",
+ "lsp-types",
+ "notify",
+ "nucleo",
+ "once_cell",
+ "open",
+ "parking_lot",
+ "percent-encoding",
+ "photon-core",
+ "photon-proxy",
+ "photon-rpc",
+ "pulldown-cmark",
+ "rayon",
+ "regex",
+ "reqwest",
+ "semver",
+ "serde",
+ "serde_json",
+ "sha2",
+ "smallvec",
+ "structdesc",
+ "strum 0.27.2",
+ "strum_macros 0.27.2",
+ "tar",
+ "tempfile",
+ "thiserror 1.0.69",
+ "toml 0.8.2",
+ "toml_edit 0.20.2",
+ "tracing 0.2.0",
+ "tracing-appender",
+ "tracing-log",
+ "tracing-subscriber",
+ "unicode-width",
+ "url",
+ "windows-sys 0.60.2",
+ "zip",
+ "zstd",
+]
+
+[[package]]
+name = "photon-core"
+version = "0.4.6"
+dependencies = [
+ "ahash",
+ "anyhow",
+ "arc-swap",
+ "directories",
+ "floem-editor-core",
+ "git2",
+ "hashbrown 0.14.5",
+ "include_dir",
+ "itertools 0.12.1",
+ "lapce-xi-rope",
+ "libloading",
+ "lsp-types",
+ "once_cell",
+ "photon-rpc",
+ "regex",
+ "remain",
+ "slotmap",
+ "strum 0.27.2",
+ "strum_macros 0.27.2",
+ "thiserror 1.0.69",
+ "tracing 0.2.0",
+ "tree-sitter",
+]
+
+[[package]]
+name = "photon-proxy"
+version = "0.4.6"
+dependencies = [
+ "alacritty_terminal",
+ "anyhow",
+ "clap",
+ "crossbeam-channel",
+ "directories",
+ "dyn-clone",
+ "flate2",
+ "floem-editor-core",
+ "git2",
+ "globset",
+ "grep-matcher",
+ "grep-regex",
+ "grep-searcher",
+ "ignore",
+ "indexmap",
+ "interprocess",
+ "jsonrpc-lite",
+ "lapce-xi-rope",
+ "libc",
+ "locale_config",
+ "lsp-types",
+ "notify",
+ "parking_lot",
+ "photon-core",
+ "photon-rpc",
+ "polling",
+ "psp-types",
+ "regex",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tar",
+ "toml 0.8.2",
+ "tracing 0.2.0",
+ "tracing-log",
+ "trash",
+ "url",
+ "walkdir",
+ "wasi-common",
+ "wasi-experimental-http-wasmtime",
+ "wasmtime",
+ "wasmtime-wasi",
+ "zstd",
+]
+
+[[package]]
+name = "photon-rpc"
+version = "0.4.6"
+dependencies = [
+ "anyhow",
+ "crossbeam-channel",
+ "human-sort",
+ "indexmap",
+ "lapce-xi-rope",
+ "lsp-types",
+ "parking_lot",
+ "serde",
+ "serde_json",
+ "tracing 0.2.0",
+ "url",
+]
 
 [[package]]
 name = "pico-args"
@@ -6135,6 +6149,15 @@ name = "utf8parse"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "711b9620af191e0cdc7468a8d14e709c3dcdb115b36f838e601583af800a370a"
+
+[[package]]
+name = "uuid"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bc5cf98d8186244414c848017f0e2676b3fcb46807f6668a97dfe67359a3c4b7"
+dependencies = [
+ "getrandom 0.2.7",
+]
 
 [[package]]
 name = "uuid"

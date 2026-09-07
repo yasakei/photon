@@ -36,6 +36,10 @@ key = "ctrl+-"
 command = "zoom_out"
 
 [[keymaps]]
+key = "ctrl+0"
+command = "zoom_reset"
+
+[[keymaps]]
 key = "ctrl+enter"
 command = "source_control_commit"
 when = "source_control_focus"

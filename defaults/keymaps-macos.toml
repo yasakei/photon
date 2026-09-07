@@ -40,6 +40,10 @@ key = "meta+-"
 command = "zoom_out"
 
 [[keymaps]]
+key = "meta+0"
+command = "zoom_reset"
+
+[[keymaps]]
 key = "meta+enter"
 command = "source_control_commit"
 when = "source_control_focus"

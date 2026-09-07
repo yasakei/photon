@@ -1,20 +1,20 @@
 ## Installation With Package Manager
 
-Lapce is available in below software repositories:
+Photon is available in below software repositories:
 
-[![Packaging status](https://repology.org/badge/vertical-allrepos/lapce.svg)](https://repology.org/project/lapce/versions)
+[![Packaging status](https://repology.org/badge/vertical-allrepos/photon.svg)](https://repology.org/project/photon/versions)
 
-Lapce is also additionally available via:
+Photon is also additionally available via:
 
-- [Flatpak](https://flathub.org/apps/details/dev.lapce.lapce)
-- [Scoop](https://scoop.sh/#/apps?q=lapce)
+- [Flatpak](https://flathub.org/apps/details/dev.photon.photon)
+- [Scoop](https://scoop.sh/#/apps?q=photon)
 
 
-For Fedora Linux, Lapce is (unofficially) available via dnf RPM package manager, using nightly as of 2024.01:
+For Fedora Linux, Photon is (unofficially) available via dnf RPM package manager, using nightly as of 2024.01:
 
-- [copr](https://copr.fedorainfracloud.org/coprs/titaniumtown/lapce/)
+- [copr](https://copr.fedorainfracloud.org/coprs/titaniumtown/photon/)
 
 ```bash
-sudo dnf copr enable titaniumtown/lapce 
-sudo dnf install lapce
+sudo dnf copr enable titaniumtown/photon 
+sudo dnf install photon
 ```

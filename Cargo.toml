@@ -1,26 +1,26 @@
 [package]
-name         = "lapce"
+name         = "photon"
 version      = { workspace = true }
 authors      = { workspace = true }
 edition      = { workspace = true }
 license      = { workspace = true }
 rust-version = { workspace = true }
-default-run  = "lapce"
+default-run  = "photon"
 
 [dependencies]
-lapce-app   = { path = "./lapce-app" }
-lapce-proxy = { path = "./lapce-proxy" }
+photon-app   = { path = "./photon-app" }
+photon-proxy = { path = "./photon-proxy" }
 
 [[bin]]
-name = "lapce"
-path = "lapce-app/src/bin/lapce.rs"
+name = "photon"
+path = "photon-app/src/bin/photon.rs"
 
 [[bin]]
-name = "lapce-proxy"
-path = "lapce-proxy/src/bin/lapce-proxy.rs"
+name = "photon-proxy"
+path = "photon-proxy/src/bin/photon-proxy.rs"
 
 [workspace]
-members = ["lapce-app", "lapce-proxy", "lapce-rpc", "lapce-core"]
+members = ["photon-app", "photon-proxy", "photon-rpc", "photon-core"]
 
 [workspace.package]
 version      = "0.4.6"
@@ -72,9 +72,9 @@ psp-types = { git = "https://github.com/lapce/psp-types", rev = "f7fea28f59e7b2d
 
 lapce-xi-rope = { version = "0.3.2", features = ["serde"] }
 
-lapce-core  = { path = "./lapce-core" }
-lapce-rpc   = { path = "./lapce-rpc" }
-lapce-proxy = { path = "./lapce-proxy" }
+photon-core  = { path = "./photon-core" }
+photon-rpc   = { path = "./photon-rpc" }
+photon-proxy = { path = "./photon-proxy" }
 
 [workspace.dependencies.floem]
 # path = "../floem"
@@ -132,13 +132,13 @@ lto           = true
 codegen-units = 1
 
 # A profile which compiles all (non-workspace) dependencies in release mode
-# but Lapce code in dev mode. This gives a good debugging experience for your
+# but Photon code in dev mode. This gives a good debugging experience for your
 # code and fast performance of other people's code. After the initial
 # build subsequent ones are as fast as dev mode builds.
 # See https://doc.rust-lang.org/cargo/reference/profiles.html
 # To use this profile:
 #   cargo build --profile fastdev
-#   cargo run --profile fastdev --bin lapce
+#   cargo run --profile fastdev --bin photon
 [profile.fastdev.package."*"]
 opt-level = 3
 
