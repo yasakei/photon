@@ -23,12 +23,12 @@ pub struct CoreConfig {
     )]
     pub auto_reload_plugin: bool,
     #[field_names(
-        desc = "Show the current file and workspace in Discord rich presence (requires the Discord desktop app to be running)"
+        desc = "Show the current file and workspace in Discord rich presence (requires the Discord desktop app to be running) (Photon)"
     )]
     #[serde(default = "default_enable_discord_presence")]
     pub enable_discord_presence: bool,
     #[field_names(
-        desc = "Make window surfaces translucent so the compositor can blur the wallpaper behind them (frosted glass look; needs a compositor blur rule, e.g. Hyprland). Takes effect on restart."
+        desc = "Make window surfaces translucent so the compositor can blur the wallpaper behind them (frosted glass look; needs a compositor blur rule, e.g. Hyprland). Takes effect on restart. (Photon)"
     )]
     #[serde(default = "default_window_transparent")]
     pub window_transparent: bool,
