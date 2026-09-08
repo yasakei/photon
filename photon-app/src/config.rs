@@ -24,6 +24,7 @@ use self::{
     editor::{EditorConfig, SCALE_OR_SIZE_LIMIT, WrapStyle},
     icon::PhotonIcons,
     icon_theme::IconThemeConfig,
+    lsp::LspConfig,
     svg::SvgStore,
     terminal::TerminalConfig,
     ui::UIConfig,
@@ -36,6 +37,7 @@ pub mod core;
 pub mod editor;
 pub mod icon;
 pub mod icon_theme;
+pub mod lsp;
 pub mod svg;
 pub mod terminal;
 pub mod ui;
@@ -104,6 +106,8 @@ pub struct PhotonConfig {
     pub ui: UIConfig,
     pub editor: EditorConfig,
     pub terminal: TerminalConfig,
+    #[serde(default)]
+    pub lsp: LspConfig,
     #[serde(default)]
     pub color_theme: ColorThemeConfig,
     #[serde(default)]

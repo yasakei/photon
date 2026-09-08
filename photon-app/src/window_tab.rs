@@ -64,7 +64,10 @@ use crate::{
     db::PhotonDb,
     debug::{DapData, PhotonBreakpoint, RunDebugMode, RunDebugProcess},
     doc::DocContent,
-    editor::{EditorData, location::{EditorLocation, EditorPosition}},
+    editor::{
+        EditorData, InlineFindDirection,
+        location::{EditorLocation, EditorPosition},
+    },
     editor_tab::EditorTabChild,
     file_explorer::data::FileExplorerData,
     find::Find,
@@ -163,6 +166,23 @@ impl std::fmt::Debug for CommonData {
             .field("workspace", &self.workspace)
             .finish()
     }
+}
+
+/// Plugin configurations plus Photon's synthetic built-in LSP entry, so the
+/// proxy learns whether zero-config language servers are enabled.
+/// (Key must match `photon-proxy/src/plugin/builtin_lsp.rs`.)
+fn plugin_configs_with_builtin_lsp(
+    config: &PhotonConfig,
+) -> std::collections::HashMap<String, std::collections::HashMap<String, Value>>
+{
+    let mut configs = config.plugins.clone();
+    configs.insert(
+        "photon-builtin-lsp".to_string(),
+        [("enable".to_string(), Value::Bool(config.lsp.builtin))]
+            .into_iter()
+            .collect(),
+    );
+    configs
 }
 
 #[derive(Clone)]
@@ -339,7 +359,7 @@ impl WindowTabData {
             workspace.clone(),
             all_disabled_volts,
             window_common.extra_plugin_paths.as_ref().clone(),
-            config.plugins.clone(),
+            plugin_configs_with_builtin_lsp(&config),
             term_tx.clone(),
         );
         let (config, set_config) = cx.create_signal(Arc::new(config));
@@ -888,15 +908,17 @@ impl WindowTabData {
                 change_plugins.push(key.clone());
             }
         }
+        let builtin_lsp_changed = self.common.config.get_untracked().lsp.builtin
+            != config.lsp.builtin;
         self.set_config.set(Arc::new(config.clone()));
         // A settings reload replaces the tab config wholesale, so refresh
         // the zoom base from disk and re-apply the persisted delta.
         self.editor_font_size_base.set(config.editor.font_size());
         self.apply_editor_zoom();
-        if !change_plugins.is_empty() {
+        if !change_plugins.is_empty() || builtin_lsp_changed {
             self.common
                 .proxy
-                .update_plugin_configs(config.plugins.clone());
+                .update_plugin_configs(plugin_configs_with_builtin_lsp(&config));
             if config.core.auto_reload_plugin {
                 let mut plugin_metas: HashMap<
                     String,
@@ -1786,6 +1808,20 @@ impl WindowTabData {
                     editor_data.receive_char(DEFAULT_RUN_TOML);
                 }
             }
+            JumpHighlightNext => {
+                if let Some(editor_data) =
+                    self.main_split.active_editor.get_untracked()
+                {
+                    editor_data.jump_highlight(InlineFindDirection::Right);
+                }
+            }
+            JumpHighlightPrev => {
+                if let Some(editor_data) =
+                    self.main_split.active_editor.get_untracked()
+                {
+                    editor_data.jump_highlight(InlineFindDirection::Left);
+                }
+            }
             QuickJump0
             | QuickJump1
             | QuickJump2
@@ -2553,6 +2589,11 @@ impl WindowTabData {
             CoreNotification::WorkspaceFileChange => {
                 self.file_explorer.reload();
             }
+            CoreNotification::GitCommitResult { success } => {
+                if *success {
+                    self.source_control.clear_commit_message();
+                }
+            }
             _ => {}
         }
     }
@@ -2583,6 +2624,9 @@ impl WindowTabData {
             }
             Focus::Panel(PanelKind::SourceControl) => {
                 Some(keypress.key_down(event, &self.source_control))
+            }
+            Focus::Panel(PanelKind::FileExplorer) => {
+                Some(keypress.key_down(event, &self.file_explorer))
             }
             _ => None,
         };
@@ -2898,8 +2942,7 @@ impl WindowTabData {
     /// Toggle a specific kind of panel.
     fn toggle_panel_focus(&self, kind: PanelKind) {
         let should_hide = match kind {
-            PanelKind::FileExplorer
-            | PanelKind::Plugin
+            PanelKind::Plugin
             | PanelKind::Problem
             | PanelKind::Debug
             | PanelKind::CallHierarchy
@@ -2910,9 +2953,10 @@ impl WindowTabData {
                 // in those cases.
                 self.panel.is_panel_visible(&kind)
             }
-            PanelKind::Terminal | PanelKind::SourceControl | PanelKind::Search => {
-                self.is_panel_focused(kind)
-            }
+            PanelKind::Terminal
+            | PanelKind::SourceControl
+            | PanelKind::Search
+            | PanelKind::FileExplorer => self.is_panel_focused(kind),
         };
         if should_hide {
             self.hide_panel(kind);

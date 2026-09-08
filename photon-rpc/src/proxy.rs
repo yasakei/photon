@@ -12,8 +12,8 @@ use indexmap::IndexMap;
 use lapce_xi_rope::RopeDelta;
 use lsp_types::{
     CallHierarchyIncomingCall, CallHierarchyItem, CodeAction, CodeActionResponse,
-    CodeLens, CompletionItem, Diagnostic, DocumentSymbolResponse, FoldingRange,
-    GotoDefinitionResponse, Hover, InlayHint, InlineCompletionResponse,
+    CodeLens, CompletionItem, Diagnostic, DocumentHighlight, DocumentSymbolResponse,
+    FoldingRange, GotoDefinitionResponse, Hover, InlayHint, InlineCompletionResponse,
     InlineCompletionTriggerKind, Location, Position, PrepareRenameResponse,
     SelectionRange, SymbolInformation, TextDocumentItem, TextEdit, WorkspaceEdit,
     request::{GotoImplementationResponse, GotoTypeDefinitionResponse},
@@ -220,6 +220,11 @@ pub enum ProxyRequest {
     ReferencesResolve {
         items: Vec<Location>,
     },
+    GetDocumentHighlights {
+        path: PathBuf,
+        position: Position,
+    },
+    GetLspStatus,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -468,6 +473,24 @@ pub enum ProxyResponse {
     ReferencesResolveResponse {
         items: Vec<FileLine>,
     },
+    GetDocumentHighlights {
+        highlights: Option<Vec<DocumentHighlight>>,
+    },
+    LspStatusResponse {
+        servers: Vec<LspServerStatus>,
+    },
+}
+
+/// Status of zero-config language server support for one language.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LspServerStatus {
+    pub language: String,
+    /// First server binary found in `PATH`, if any.
+    pub program: Option<String>,
+    /// Whether a built-in server is currently running.
+    pub running: bool,
+    /// Whether a plugin claims this language.
+    pub via_plugin: bool,
 }
 
 pub type ProxyMessage = RpcMessage<ProxyRequest, ProxyNotification, ProxyResponse>;
@@ -1025,6 +1048,22 @@ impl ProxyRpcHandler {
         f: impl ProxyCallback + 'static,
     ) {
         self.request_async(ProxyRequest::GetDocumentSymbols { path }, f);
+    }
+
+    pub fn get_document_highlights(
+        &self,
+        path: PathBuf,
+        position: Position,
+        f: impl ProxyCallback + 'static,
+    ) {
+        self.request_async(
+            ProxyRequest::GetDocumentHighlights { path, position },
+            f,
+        );
+    }
+
+    pub fn lsp_status(&self, f: impl ProxyCallback + 'static) {
+        self.request_async(ProxyRequest::GetLspStatus, f);
     }
 
     pub fn get_workspace_symbols(

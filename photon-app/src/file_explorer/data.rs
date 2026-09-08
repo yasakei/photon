@@ -100,7 +100,27 @@ impl KeyPressFocus for FileExplorerData {
                 _ => self.naming_editor_data.run_command(command, count, mods),
             }
         } else {
-            CommandExecuted::No
+            match command.kind {
+                // Enter starts renaming the selected file/directory.
+                CommandKind::Edit(EditCommand::InsertNewLine) => {
+                    if self.rename_selected() {
+                        CommandExecuted::Yes
+                    } else {
+                        CommandExecuted::No
+                    }
+                }
+                // Delete/Backspace moves the selected file/directory to trash.
+                CommandKind::Edit(
+                    EditCommand::DeleteForward | EditCommand::DeleteBackward,
+                ) => {
+                    if self.trash_selected() {
+                        CommandExecuted::Yes
+                    } else {
+                        CommandExecuted::No
+                    }
+                }
+                _ => CommandExecuted::No,
+            }
         }
     }
 
@@ -477,6 +497,56 @@ impl FileExplorerData {
                 .send(InternalCommand::MakeConfirmed);
             EventPropagation::Stop
         }
+    }
+
+    /// Path of the currently selected file node, if any.
+    fn selected_path(&self) -> Option<PathBuf> {
+        match self.select.get_untracked() {
+            Some(FileNodeViewKind::Path(path)) => Some(path),
+            _ => None,
+        }
+    }
+
+    fn is_workspace_root(&self, path: &Path) -> bool {
+        self.common
+            .workspace
+            .path
+            .as_ref()
+            .is_some_and(|root| root == path)
+    }
+
+    /// Enter: start renaming the selected file/directory.
+    fn rename_selected(&self) -> bool {
+        let Some(path) = self.selected_path() else {
+            return false;
+        };
+        if self.is_workspace_root(&path) {
+            return false;
+        }
+        self.naming.set(Naming::Renaming(Renaming {
+            state: NamingState::Naming,
+            path,
+            editor_needs_reset: true,
+        }));
+        true
+    }
+
+    /// Delete: move the selected file/directory to trash.
+    fn trash_selected(&self) -> bool {
+        let Some(path) = self.selected_path() else {
+            return false;
+        };
+        if self.is_workspace_root(&path) {
+            return false;
+        }
+        let proxy = self.common.proxy.clone();
+        proxy.trash_path(path, |res| {
+            if let Err(err) = res {
+                tracing::warn!("Failed to trash path: {:?}", err);
+            }
+        });
+        self.select.set(None);
+        true
     }
 
     pub fn secondary_click(&self, path: &Path) {

@@ -64,6 +64,7 @@ pub fn foldable_panel_section(
                 || false,
                 || false,
                 config,
+                PhotonColor::PHOTON_ICON_ACTIVE,
             ),
             header.style(|s| s.align_items(AlignItems::Center).padding_left(3.0)),
         ))

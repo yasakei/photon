@@ -41,7 +41,8 @@ use lsp_types::{
     request::{
         CallHierarchyIncomingCalls, CallHierarchyPrepare, CodeActionRequest,
         CodeActionResolveRequest, CodeLensRequest, CodeLensResolve, Completion,
-        DocumentSymbolRequest, FoldingRangeRequest, Formatting, GotoDefinition,
+        DocumentHighlightRequest, DocumentSymbolRequest, FoldingRangeRequest,
+        Formatting, GotoDefinition,
         GotoImplementation, GotoTypeDefinition, HoverRequest, Initialize,
         InlayHintRequest, InlineCompletionRequest, PrepareRenameRequest, References,
         RegisterCapability, Rename, ResolveCompletionItem, SelectionRangeRequest,
@@ -858,6 +859,10 @@ impl PluginHostHandler {
             CallHierarchyIncomingCalls::METHOD => {
                 self.server_capabilities.call_hierarchy_provider.is_some()
             }
+            DocumentHighlightRequest::METHOD => self
+                .server_capabilities
+                .document_highlight_provider
+                .is_some(),
             _ => false,
         }
     }

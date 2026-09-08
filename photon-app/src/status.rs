@@ -20,7 +20,7 @@ use photon_core::{
 use lsp_types::{DiagnosticSeverity, ProgressToken};
 
 use crate::{
-    app::clickable_icon,
+    app::clickable_icon_with_color,
     command::PhotonWorkbenchCommand,
     config::{PhotonConfig, color::PhotonColor, icon::PhotonIcons},
     editor::EditorData,
@@ -132,7 +132,7 @@ pub fn status(
                     let config = config.get();
                     let icon_size = config.ui.icon_size() as f32;
                     s.size(icon_size, icon_size)
-                        .color(config.color(PhotonColor::PHOTON_ICON_ACTIVE))
+                        .color(config.color(PhotonColor::STATUS_FOREGROUND))
                 }),
                 label(branch).style(move |s| {
                     s.margin_left(10.0)
@@ -177,7 +177,7 @@ pub fn status(
                             let config = config.get();
                             let size = config.ui.icon_size() as f32;
                             s.size(size, size)
-                                .color(config.color(PhotonColor::PHOTON_ICON_ACTIVE))
+                                .color(config.color(PhotonColor::STATUS_FOREGROUND))
                         },
                     ),
                     label(move || diagnostic_count.get().0.to_string()).style(
@@ -197,7 +197,7 @@ pub fn status(
                             let size = config.ui.icon_size() as f32;
                             s.size(size, size)
                                 .margin_left(5.0)
-                                .color(config.color(PhotonColor::PHOTON_ICON_ACTIVE))
+                                .color(config.color(PhotonColor::STATUS_FOREGROUND))
                         },
                     ),
                     label(move || diagnostic_count.get().1.to_string()).style(
@@ -252,7 +252,7 @@ pub fn status(
                         }
                     }
                 };
-                clickable_icon(
+                clickable_icon_with_color(
                     icon,
                     move || {
                         panel.toggle_container_visual(&PanelContainerPosition::Left)
@@ -261,6 +261,7 @@ pub fn status(
                     || false,
                     || "Toggle Left Panel",
                     config,
+                    PhotonColor::STATUS_FOREGROUND,
                 )
             },
             {
@@ -278,7 +279,7 @@ pub fn status(
                         }
                     }
                 };
-                clickable_icon(
+                clickable_icon_with_color(
                     icon,
                     move || {
                         panel
@@ -288,6 +289,7 @@ pub fn status(
                     || false,
                     || "Toggle Bottom Panel",
                     config,
+                    PhotonColor::STATUS_FOREGROUND,
                 )
             },
             {
@@ -304,7 +306,7 @@ pub fn status(
                         }
                     }
                 };
-                clickable_icon(
+                clickable_icon_with_color(
                     icon,
                     move || {
                         panel.toggle_container_visual(&PanelContainerPosition::Right)
@@ -313,6 +315,7 @@ pub fn status(
                     || false,
                     || "Toggle Right Panel",
                     config,
+                    PhotonColor::STATUS_FOREGROUND,
                 )
             },
         ))

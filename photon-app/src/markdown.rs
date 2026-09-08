@@ -9,9 +9,59 @@ use smallvec::SmallVec;
 
 use crate::config::{PhotonConfig, color::PhotonColor};
 
+#[derive(Clone, Debug)]
+pub struct LinkSpan {
+    /// Byte range of the link text inside the layout.
+    pub range: std::ops::Range<usize>,
+    pub url: String,
+}
+
+/// Find bare `http(s)://` URLs in already-built text (LSP hovers often
+/// contain URLs that are not markdown links).
+fn find_bare_urls(text: &str) -> Vec<LinkSpan> {
+    let mut links = Vec::new();
+    let bytes = text.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        let rest = &text[i..];
+        let start = if let Some(pos) = rest.find("https://") {
+            (i + pos, "https://".len())
+        } else if let Some(pos) = rest.find("http://") {
+            (i + pos, "http://".len())
+        } else {
+            break;
+        };
+        let mut end = start.0 + start.1;
+        while end < bytes.len() {
+            let c = bytes[end] as char;
+            if c.is_whitespace() || "<>)]\"'".contains(c) {
+                break;
+            }
+            end += 1;
+        }
+        // Trim trailing punctuation that is rarely part of the URL.
+        while end > start.0 + start.1
+            && ".,;:!?".contains(bytes[end - 1] as char)
+        {
+            end -= 1;
+        }
+        if end > start.0 + start.1 {
+            links.push(LinkSpan {
+                range: start.0..end,
+                url: text[start.0..end].to_string(),
+            });
+        }
+        i = end.max(start.0 + 1);
+    }
+    links
+}
+
 #[derive(Clone)]
 pub enum MarkdownContent {
-    Text(TextLayout),
+    Text {
+        layout: TextLayout,
+        links: Vec<LinkSpan>,
+    },
     Image { url: String, title: String },
     Separator,
 }
@@ -38,6 +88,10 @@ pub fn parse_markdown(
     let mut pos = 0;
 
     let mut tag_stack: SmallVec<[(usize, Tag); 4]> = SmallVec::new();
+
+    // Link spans for the text currently being built; attached to the layout
+    // when it is flushed so clicks can open them.
+    let mut pending_links: Vec<LinkSpan> = Vec::new();
 
     let parser = Parser::new_ext(
         text,
@@ -85,6 +139,17 @@ pub fn parse_markdown(
                         add_newline = true;
                     }
 
+                    if let Tag::Link { dest_url, .. } = &tag {
+                        // A link whose text crossed an image flush has stale
+                        // offsets; drop it rather than misattribute clicks.
+                        if start_offset <= pos {
+                            pending_links.push(LinkSpan {
+                                range: start_offset..pos,
+                                url: dest_url.to_string(),
+                            });
+                        }
+                    }
+
                     match &tag {
                         Tag::CodeBlock(kind) => {
                             let language =
@@ -114,9 +179,14 @@ pub fn parse_markdown(
                             // image is rendered?
 
                             if builder_dirty {
+                                pending_links
+                                    .extend(find_bare_urls(&current_text));
                                 let mut text_layout = TextLayout::new();
                                 text_layout.set_text(&current_text, attr_list, None);
-                                res.push(MarkdownContent::Text(text_layout));
+                                res.push(MarkdownContent::Text {
+                                    layout: text_layout,
+                                    links: std::mem::take(&mut pending_links),
+                                });
                                 attr_list = AttrsList::new(default_attrs.clone());
                                 current_text.clear();
                                 pos = 0;
@@ -191,9 +261,13 @@ pub fn parse_markdown(
     }
 
     if builder_dirty {
+        pending_links.extend(find_bare_urls(&current_text));
         let mut text_layout = TextLayout::new();
         text_layout.set_text(&current_text, attr_list, None);
-        res.push(MarkdownContent::Text(text_layout));
+        res.push(MarkdownContent::Text {
+            layout: text_layout,
+            links: pending_links,
+        });
     }
 
     res
@@ -245,7 +319,7 @@ fn attribute_for_tag<'a>(
             title: _,
             id: _,
         } => {
-            // TODO: Link support
+            // Clicks are handled via the recorded link spans
             Some(default_attrs.color(config.color(PhotonColor::EDITOR_LINK)))
         }
         // All other tags are currently ignored
@@ -325,6 +399,44 @@ pub fn from_marked_string(
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::{MarkdownContent, find_bare_urls, parse_markdown};
+    use crate::config::PhotonConfig;
+
+    #[test]
+    fn gopls_style_hover_records_link() {
+        let config = PhotonConfig::default();
+        let text = "Unlock unlocks m. See `Mutex`.\n\n[(sync.Mutex).Unlock on pkg.go.dev](https://pkg.go.dev/sync#Mutex.Unlock)\n";
+        let contents = parse_markdown(text, 1.8, &config);
+        let mut links = Vec::new();
+        for content in &contents {
+            if let MarkdownContent::Text { layout: _, links: item_links } = content
+            {
+                links.extend(item_links.iter().cloned());
+            }
+        }
+        assert_eq!(links.len(), 1, "expected one link, got {links:?}");
+        assert_eq!(links[0].url, "https://pkg.go.dev/sync#Mutex.Unlock");
+    }
+
+    #[test]
+    fn bare_urls_are_found() {
+        let text = "see https://pkg.go.dev/sync#Mutex.Unlock, ok?";
+        let links = find_bare_urls(text);
+        assert_eq!(links.len(), 1);
+        assert_eq!(links[0].url, "https://pkg.go.dev/sync#Mutex.Unlock");
+        assert_eq!(&text[links[0].range.clone()], links[0].url);
+
+        let text = "no links here (https://x.y)";
+        let links = find_bare_urls(text);
+        assert_eq!(links.len(), 1);
+        assert_eq!(links[0].url, "https://x.y");
+
+        assert!(find_bare_urls("nothing here").is_empty());
+    }
+}
+
 pub fn from_plaintext(
     text: &str,
     line_height: f64,
@@ -340,5 +452,8 @@ pub fn from_plaintext(
         ),
         None,
     );
-    vec![MarkdownContent::Text(text_layout)]
+    vec![MarkdownContent::Text {
+        layout: text_layout,
+        links: Vec::new(),
+    }]
 }

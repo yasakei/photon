@@ -1,3 +1,4 @@
+pub mod builtin_lsp;
 pub mod catalog;
 pub mod dap;
 pub mod lsp;
@@ -26,7 +27,7 @@ use photon_rpc::{
     core::CoreRpcHandler,
     dap_types::{self, DapId, RunDebugConfig, SourceBreakpoint, ThreadId},
     plugin::{PluginId, VoltInfo, VoltMetadata},
-    proxy::ProxyRpcHandler,
+    proxy::{LspServerStatus, ProxyRpcHandler},
     style::LineStyle,
     terminal::TermId,
 };
@@ -40,7 +41,8 @@ use lsp_types::{
     CodeActionResponse, CodeLens, CodeLensParams, CompletionClientCapabilities,
     CompletionItem, CompletionItemCapability,
     CompletionItemCapabilityResolveSupport, CompletionParams, CompletionResponse,
-    Diagnostic, DocumentFormattingParams, DocumentSymbolClientCapabilities,
+    Diagnostic, DocumentFormattingParams, DocumentHighlight,
+    DocumentHighlightParams, DocumentSymbolClientCapabilities,
     DocumentSymbolParams, DocumentSymbolResponse, FoldingRange,
     FoldingRangeClientCapabilities, FoldingRangeParams, FormattingOptions,
     GotoCapability, GotoDefinitionParams, GotoDefinitionResponse, Hover,
@@ -63,7 +65,8 @@ use lsp_types::{
     request::{
         CallHierarchyIncomingCalls, CallHierarchyPrepare, CodeActionRequest,
         CodeActionResolveRequest, CodeLensRequest, CodeLensResolve, Completion,
-        DocumentSymbolRequest, FoldingRangeRequest, Formatting, GotoDefinition,
+        DocumentHighlightRequest, DocumentSymbolRequest, FoldingRangeRequest,
+        Formatting, GotoDefinition,
         GotoImplementation, GotoImplementationResponse, GotoTypeDefinition,
         GotoTypeDefinitionParams, GotoTypeDefinitionResponse, HoverRequest,
         InlayHintRequest, InlineCompletionRequest, PrepareRenameRequest, References,
@@ -117,6 +120,9 @@ pub enum PluginCatalogRpc {
         dap_id: DapId,
         reference: usize,
         f: Box<dyn RpcCallback<Vec<dap_types::Variable>, RpcError>>,
+    },
+    LspStatus {
+        f: Box<dyn RpcCallback<Vec<LspServerStatus>, RpcError>>,
     },
     DapGetScopes {
         dap_id: DapId,
@@ -339,6 +345,9 @@ impl PluginCatalogRpcHandler {
                     f,
                 } => {
                     plugin.dap_variable(dap_id, reference, f);
+                }
+                PluginCatalogRpc::LspStatus { f } => {
+                    f.call(Ok(plugin.lsp_statuses()));
                 }
                 PluginCatalogRpc::DapGetScopes {
                     dap_id,
@@ -697,6 +706,28 @@ impl PluginCatalogRpcHandler {
             Some(path.to_path_buf()),
             cb,
         );
+    }
+
+    pub fn get_document_highlights(
+        &self,
+        path: &Path,
+        position: Position,
+        cb: impl FnOnce(PluginId, Result<Option<Vec<DocumentHighlight>>, RpcError>)
+        + Clone
+        + Send
+        + 'static,
+    ) {
+        let uri = Url::from_file_path(path).unwrap();
+        let method = DocumentHighlightRequest::METHOD;
+        let params = DocumentHighlightParams {
+            text_document_position_params: TextDocumentPositionParams {
+                text_document: TextDocumentIdentifier { uri },
+                position,
+            },
+            work_done_progress_params: WorkDoneProgressParams::default(),
+            partial_result_params: PartialResultParams::default(),
+        };
+        self.send_request_to_all_plugins(method, params, None, None, cb);
     }
 
     pub fn get_lsp_folding_range(
@@ -1482,6 +1513,17 @@ impl PluginCatalogRpcHandler {
         if let Err(err) = self.plugin_tx.send(PluginCatalogRpc::DapVariable {
             dap_id,
             reference,
+            f: Box::new(f),
+        }) {
+            tracing::error!("{:?}", err);
+        }
+    }
+
+    pub fn lsp_status(
+        &self,
+        f: impl FnOnce(Result<Vec<LspServerStatus>, RpcError>) + Send + 'static,
+    ) {
+        if let Err(err) = self.plugin_tx.send(PluginCatalogRpc::LspStatus {
             f: Box::new(f),
         }) {
             tracing::error!("{:?}", err);

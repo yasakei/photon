@@ -4,6 +4,7 @@ use floem::{
     IntoView, View,
     action::{TimerToken, add_overlay, exec_after, remove_overlay},
     event::EventListener,
+    ext_event::create_ext_action,
     keyboard::Modifiers,
     peniko::kurbo::{Point, Rect, Size},
     reactive::{
@@ -21,7 +22,10 @@ use floem::{
 use indexmap::IndexMap;
 use inflector::Inflector;
 use photon_core::{buffer::rope_text::RopeText, mode::Mode};
-use photon_rpc::plugin::VoltID;
+use photon_rpc::{
+    plugin::VoltID,
+    proxy::{LspServerStatus, ProxyResponse},
+};
 use lapce_xi_rope::Rope;
 use serde::Serialize;
 use serde_json::Value;
@@ -30,8 +34,8 @@ use crate::{
     command::CommandExecuted,
     config::{
         DropdownInfo, PhotonConfig, color::PhotonColor, core::CoreConfig,
-        editor::EditorConfig, icon::PhotonIcons, terminal::TerminalConfig,
-        ui::UIConfig,
+        editor::EditorConfig, icon::PhotonIcons, lsp::LspConfig,
+        terminal::TerminalConfig, ui::UIConfig,
     },
     keypress::KeyPressFocus,
     main_split::Editors,
@@ -47,7 +51,27 @@ fn photon_setting_suffix(kind: &str, field: &str) -> &'static str {
     match (kind, field) {
         ("Editor", "enable-alt-quick-jump") => " (Photon)",
         ("Core", "enable-discord-presence") => " (Photon)",
+        ("LSP", "builtin") => " (Photon)",
         _ => "",
+    }
+}
+
+/// One-line human-readable state for a language server status row.
+fn lsp_status_text(server: &LspServerStatus) -> String {
+    if server.running {
+        match &server.program {
+            Some(program) => format!("✓ {program} — running"),
+            None => "✓ running".to_string(),
+        }
+    } else if server.via_plugin {
+        "✓ handled by plugin".to_string()
+    } else if let Some(program) = &server.program {
+        format!(
+            "○ {program} found — open a {} file to start it",
+            server.language
+        )
+    } else {
+        "✗ not installed".to_string()
     }
 }
 
@@ -156,6 +180,22 @@ impl SettingsData {
         }
 
         let config = common.config;
+        // Built-in language server status, fetched from the proxy. Read-only
+        // rows below show which LSP is properly set up per language.
+        let lsp_status = cx.create_rw_signal(Vec::<LspServerStatus>::new());
+        {
+            let common = common.clone();
+            create_effect(move |_| {
+                config.get();
+                let send = create_ext_action(cx, move |result| {
+                    if let Ok(ProxyResponse::LspStatusResponse { servers }) = result
+                    {
+                        lsp_status.set(servers);
+                    }
+                });
+                common.proxy.lsp_status(send);
+            });
+        }
         let plugin_items = cx.create_rw_signal(im::Vector::new());
         let plugin_kinds = cx.create_rw_signal(im::Vector::new());
         let filtered_items = cx.create_rw_signal(im::Vector::new());
@@ -191,6 +231,12 @@ impl SettingsData {
                     &TerminalConfig::FIELDS[..],
                     &TerminalConfig::DESCS[..],
                     into_settings_map(&config.terminal),
+                ),
+                (
+                    "LSP",
+                    &LspConfig::FIELDS[..],
+                    &LspConfig::DESCS[..],
+                    into_settings_map(&config.lsp),
                 ),
             ] {
                 let pos = cx.create_rw_signal(Point::new(0.0, item_height_accum));
@@ -246,6 +292,32 @@ impl SettingsData {
                     });
                     item_height_accum += 50.0;
                 }
+            }
+
+            // Built-in LSP status rows (read-only): which language server
+            // is properly set up for each language.
+            for server in lsp_status.get() {
+                let state = lsp_status_text(&server);
+                let filter_text = format!(
+                    "lsp {} {} {state}",
+                    server.language,
+                    server.program.as_deref().unwrap_or_default(),
+                )
+                .to_lowercase();
+                let filter_text =
+                    format!("{filter_text}{}", filter_text.replace(' ', ""));
+                data_items.push_back(SettingsItem {
+                    kind: "lsp".to_string(),
+                    name: server.language.clone(),
+                    field: String::new(),
+                    filter_text,
+                    description: state,
+                    value: SettingsValue::Empty,
+                    pos: cx.create_rw_signal(Point::ZERO),
+                    size: cx.create_rw_signal(Size::ZERO),
+                    serde_value: Value::Null,
+                    header: false,
+                });
             }
 
             filtered_items.set(data_items.clone());

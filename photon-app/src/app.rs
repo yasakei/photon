@@ -44,7 +44,7 @@ use floem::{
         Decorators, VirtualVector, clip, container, drag_resize_window_area,
         drag_window_area, dyn_stack,
         editor::{core::register::Clipboard, text::SystemClipboard},
-        empty, label, rich_text,
+        empty, label,
         scroll::{PropagatePointerWheel, VerticalScrollAsHorizontal, scroll},
         stack, svg, tab, text, tooltip, virtual_stack,
     },
@@ -86,6 +86,7 @@ use crate::{
     },
     editor_tab::{EditorTabChild, EditorTabData},
     focus_text::focus_text,
+    hover::clickable_hover_text,
     id::{EditorTabId, SplitId},
     keymap::keymap_view,
     keypress::keymap::KeyMap,
@@ -2125,6 +2126,7 @@ pub fn not_clickable_icon<S: std::fmt::Display + 'static>(
             active_fn,
             disabled_fn,
             config,
+            PhotonColor::PHOTON_ICON_ACTIVE,
         ),
         tooltip_,
     )
@@ -2141,7 +2143,37 @@ pub fn clickable_icon<S: std::fmt::Display + 'static>(
 ) -> impl View {
     tooltip_label(
         config,
-        clickable_icon_base(icon, Some(on_click), active_fn, disabled_fn, config),
+        clickable_icon_base(
+            icon,
+            Some(on_click),
+            active_fn,
+            disabled_fn,
+            config,
+            PhotonColor::PHOTON_ICON_ACTIVE,
+        ),
+        tooltip_,
+    )
+}
+
+pub fn clickable_icon_with_color<S: std::fmt::Display + 'static>(
+    icon: impl Fn() -> &'static str + 'static,
+    on_click: impl Fn() + 'static,
+    active_fn: impl Fn() -> bool + 'static,
+    disabled_fn: impl Fn() -> bool + 'static + Copy,
+    tooltip_: impl Fn() -> S + 'static + Clone,
+    config: ReadSignal<Arc<PhotonConfig>>,
+    icon_color: &'static str,
+) -> impl View {
+    tooltip_label(
+        config,
+        clickable_icon_base(
+            icon,
+            Some(on_click),
+            active_fn,
+            disabled_fn,
+            config,
+            icon_color,
+        ),
         tooltip_,
     )
 }
@@ -2152,6 +2184,7 @@ pub fn clickable_icon_base(
     active_fn: impl Fn() -> bool + 'static,
     disabled_fn: impl Fn() -> bool + 'static + Copy,
     config: ReadSignal<Arc<PhotonConfig>>,
+    icon_color: &'static str,
 ) -> impl View {
     let view = container(
         svg(move || config.get().ui_svg(icon()))
@@ -2159,7 +2192,7 @@ pub fn clickable_icon_base(
                 let config = config.get();
                 let size = config.ui.icon_size() as f32;
                 s.size(size, size)
-                    .color(config.color(PhotonColor::PHOTON_ICON_ACTIVE))
+                    .color(config.color(icon_color))
                     .disabled(|s| {
                         s.color(config.color(PhotonColor::PHOTON_ICON_INACTIVE))
                             .cursor(CursorStyle::Default)
@@ -3052,17 +3085,21 @@ fn hover(window_tab_data: Rc<WindowTabData>) -> impl View {
     let config = window_tab_data.common.config;
     let id = AtomicU64::new(0);
     let layout_rect = window_tab_data.common.hover.layout_rect;
+    let hover_commands = window_tab_data.common.internal_command;
 
     scroll(
         dyn_stack(
             move || hover_data.content.get(),
             move |_| id.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             move |content| match content {
-                MarkdownContent::Text(text_layout) => container(
-                    rich_text(move || text_layout.clone())
-                        .style(|s| s.max_width(600.0)),
-                )
-                .style(|s| s.max_width_full()),
+                MarkdownContent::Text { layout, links } => {
+                    container(clickable_hover_text(
+                        layout,
+                        links,
+                        hover_commands,
+                    ))
+                    .style(|s| s.max_width_full())
+                }
                 MarkdownContent::Image { .. } => container(empty()),
                 MarkdownContent::Separator => container(empty().style(move |s| {
                     s.width_full()
@@ -3093,7 +3130,15 @@ fn hover(window_tab_data: Rc<WindowTabData>) -> impl View {
                     .border(1.0)
                     .border_radius(6.0)
                     .border_color(config.color(PhotonColor::PHOTON_BORDER))
-                    .background(config.color(PhotonColor::PANEL_BACKGROUND))
+                    // Floating overlays sit inside the window, where the
+                    // compositor blur never reaches, so they must stay fully
+                    // opaque even in frosted-glass mode or the code behind
+                    // bleeds through and the text is unreadable.
+                    .background(
+                        config
+                            .color(PhotonColor::PANEL_BACKGROUND)
+                            .with_alpha(1.0),
+                    )
                     .set(PropagatePointerWheel, false)
             } else {
                 s.hide()
@@ -3217,7 +3262,12 @@ fn completion(window_tab_data: Rc<WindowTabData>) -> impl View {
             .max_height(400.0)
             .margin_left(origin.x as f32)
             .margin_top(origin.y as f32)
-            .background(config.color(PhotonColor::COMPLETION_BACKGROUND))
+            // Same as hover: floating overlay, must stay opaque (see above).
+            .background(
+                config
+                    .color(PhotonColor::COMPLETION_BACKGROUND)
+                    .with_alpha(1.0),
+            )
             .font_family(config.editor.font_family.clone())
             .font_size(config.editor.font_size() as f32)
             .border_radius(6.0)

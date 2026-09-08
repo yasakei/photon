@@ -324,6 +324,7 @@ fn file_explorer_view(
             move |node| {
                 let level = node.level;
                 let data = data.clone();
+                let focus_data = data.clone();
                 let click_data = data.clone();
                 let double_click_data = data.clone();
                 let secondary_click_data = data.clone();
@@ -432,9 +433,15 @@ fn file_explorer_view(
                     let double_click_path = path.clone();
                     let secondary_click_path = path.clone();
                     let aux_click_path = path.clone();
+                    let focus = focus_data.common.focus;
                     view.on_click_stop({
                         let kind = kind.clone();
                         move |_| {
+                            if focus.get_untracked()
+                                != Focus::Panel(PanelKind::FileExplorer)
+                            {
+                                focus.set(Focus::Panel(PanelKind::FileExplorer));
+                            }
                             click_data.click(&click_path, config);
                             select.update(|x| *x = Some(kind.clone()));
                         }

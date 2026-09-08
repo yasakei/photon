@@ -338,7 +338,9 @@ impl ProxyHandler for Dispatcher {
             GitCommit { message, diffs } => {
                 if let Some(workspace) = self.workspace.as_ref() {
                     match git_commit(workspace, &message, diffs) {
-                        Ok(()) => (),
+                        Ok(()) => {
+                            self.core_rpc.git_commit_result(true);
+                        }
                         Err(e) => {
                             self.core_rpc.show_message(
                                 "Git Commit failure".to_owned(),
@@ -347,6 +349,7 @@ impl ProxyHandler for Dispatcher {
                                     message: e.to_string(),
                                 },
                             );
+                            self.core_rpc.git_commit_result(false);
                         }
                     }
                 }
@@ -1203,6 +1206,30 @@ impl ProxyHandler for Dispatcher {
                     .collect();
                 let resp = ProxyResponse::ReferencesResolveResponse { items };
                 self.proxy_rpc.handle_response(id, Ok(resp));
+            }
+            GetDocumentHighlights { path, position } => {
+                let proxy_rpc = self.proxy_rpc.clone();
+                self.catalog_rpc.get_document_highlights(
+                    &path,
+                    position,
+                    move |_, result| {
+                        let result = result.map(|highlights| {
+                            ProxyResponse::GetDocumentHighlights { highlights }
+                        });
+                        proxy_rpc.handle_response(id, result);
+                    },
+                );
+            }
+            GetLspStatus => {
+                let proxy_rpc = self.proxy_rpc.clone();
+                self.catalog_rpc.lsp_status(move |result| {
+                    proxy_rpc.handle_response(
+                        id,
+                        result.map(|servers| ProxyResponse::LspStatusResponse {
+                            servers,
+                        }),
+                    );
+                });
             }
         }
     }

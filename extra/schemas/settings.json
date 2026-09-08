@@ -12,6 +12,9 @@
                 "editor": {
                     "$ref": "#/definitions/Editor"
                 },
+                "lsp": {
+                    "$ref": "#/definitions/LSP"
+                },
                 "terminal": {
                     "$ref": "#/definitions/Terminal"
                 },
@@ -293,6 +296,17 @@
             },
             "required": [],
             "title": "Editor"
+        },
+        "LSP": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "builtin": {
+                    "type": "boolean"
+                }
+            },
+            "required": [],
+            "title": "LSP"
         },
         "Terminal": {
             "type": "object",

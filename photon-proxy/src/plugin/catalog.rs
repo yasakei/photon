@@ -1,6 +1,6 @@
 use std::{
     borrow::Cow,
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     path::PathBuf,
     sync::{
         Arc,
@@ -13,7 +13,7 @@ use photon_rpc::{
     RpcError,
     dap_types::{self, DapId, DapServer, SetBreakpointsResponse},
     plugin::{PluginId, VoltID, VoltInfo, VoltMetadata},
-    proxy::ProxyResponse,
+    proxy::{LspServerStatus, ProxyResponse},
     style::LineStyle,
 };
 use lapce_xi_rope::{Rope, RopeDelta};
@@ -27,7 +27,7 @@ use psp_types::Notification;
 use serde_json::Value;
 
 use super::{
-    PluginCatalogNotification, PluginCatalogRpcHandler,
+    PluginCatalogNotification, PluginCatalogRpcHandler, builtin_lsp,
     dap::{DapClient, DapRpcHandler, DebuggerData},
     psp::{CloneableCallback, PluginServerRpc, PluginServerRpcHandler, RpcCallback},
     wasi::{load_all_volts, start_volt},
@@ -45,6 +45,12 @@ pub struct PluginCatalog {
     plugin_configurations: HashMap<String, HashMap<String, serde_json::Value>>,
     unactivated_volts: HashMap<VoltID, VoltMetadata>,
     open_files: HashMap<PathBuf, String>,
+    builtin_lsp_enabled: bool,
+    /// Languages a volt claimed (a plugin handles them, so no built-in
+    /// server is started for them).
+    volt_languages: HashSet<String>,
+    /// Languages a built-in server was already attempted for this session.
+    builtin_lsp_tried: HashSet<String>,
 }
 
 impl PluginCatalog {
@@ -55,6 +61,8 @@ impl PluginCatalog {
         plugin_configurations: HashMap<String, HashMap<String, serde_json::Value>>,
         plugin_rpc: PluginCatalogRpcHandler,
     ) -> Self {
+        let builtin_lsp_enabled =
+            builtin_lsp::builtin_enabled(&plugin_configurations);
         let plugin = Self {
             workspace,
             plugin_rpc: plugin_rpc.clone(),
@@ -64,6 +72,9 @@ impl PluginCatalog {
             debuggers: HashMap::new(),
             unactivated_volts: HashMap::new(),
             open_files: HashMap::new(),
+            builtin_lsp_enabled,
+            volt_languages: HashSet::new(),
+            builtin_lsp_tried: HashSet::new(),
         };
 
         thread::spawn(move || {
@@ -205,6 +216,15 @@ impl PluginCatalog {
         for id in to_be_activated.iter() {
             let workspace = self.workspace.clone();
             if let Some(meta) = self.unactivated_volts.remove(id) {
+                // Remember the languages this volt claims so no built-in
+                // server is started for them later in this session.
+                if let Some(languages) = meta
+                    .activation
+                    .as_ref()
+                    .and_then(|activation| activation.language.as_ref())
+                {
+                    self.volt_languages.extend(languages.iter().cloned());
+                }
                 let configurations =
                     self.plugin_configurations.get(&meta.name).cloned();
                 tracing::debug!("{:?} {:?}", id, configurations);
@@ -282,6 +302,42 @@ impl PluginCatalog {
         self.start_unactivated_volts(to_be_activated);
     }
 
+    /// Whether any plugin (pending or already running) claims `language_id`.
+    fn volt_claims_language(&self, language_id: &str) -> bool {
+        self.volt_languages.contains(language_id)
+            || self.unactivated_volts.values().any(|meta| {
+                meta.activation
+                    .as_ref()
+                    .and_then(|activation| activation.language.as_ref())
+                    .map(|languages| languages.iter().any(|l| l == language_id))
+                    .unwrap_or(false)
+            })
+    }
+
+    /// One status row per known language for the settings UI.
+    pub fn lsp_statuses(&self) -> Vec<LspServerStatus> {
+        builtin_lsp::BUILTIN_SERVERS
+            .iter()
+            .map(|(language, servers)| {
+                let program = servers.iter().find_map(|server| {
+                    builtin_lsp::find_server_program(server.program)
+                        .map(|_| server.program.to_string())
+                });
+                let running = self.plugins.values().any(|plugin| {
+                    plugin.volt_id.author == builtin_lsp::BUILTIN_VOLT_AUTHOR
+                        && plugin.volt_id.name
+                            == builtin_lsp::builtin_volt_name(language)
+                });
+                LspServerStatus {
+                    language: language.to_string(),
+                    program,
+                    running,
+                    via_plugin: self.volt_claims_language(language),
+                }
+            })
+            .collect()
+    }
+
     pub fn handle_did_open_text_document(&mut self, document: TextDocumentItem) {
         match document.uri.to_file_path() {
             Ok(path) => {
@@ -290,6 +346,23 @@ impl PluginCatalog {
             Err(err) => {
                 tracing::error!("{:?}", err);
             }
+        }
+
+        // No plugin claims this language: try a built-in server found in
+        // PATH instead, so language features work with zero setup.
+        // (Checked before volts activate below, while their claims are
+        // still visible.)
+        let language_id = document.language_id.clone();
+        if self.builtin_lsp_enabled
+            && !self.builtin_lsp_tried.contains(&language_id)
+            && !self.volt_claims_language(&language_id)
+        {
+            self.builtin_lsp_tried.insert(language_id.clone());
+            builtin_lsp::start_builtin_server(
+                self.plugin_rpc.clone(),
+                self.workspace.clone(),
+                &language_id,
+            );
         }
 
         let to_be_activated: Vec<VoltID> = self
@@ -487,6 +560,8 @@ impl PluginCatalog {
             UpdatePluginConfigs(configs) => {
                 tracing::debug!("UpdatePluginConfigs {:?}", configs);
                 self.plugin_configurations = configs;
+                self.builtin_lsp_enabled =
+                    builtin_lsp::builtin_enabled(&self.plugin_configurations);
             }
             PluginServerLoaded(plugin) => {
                 // TODO: check if the server has did open registered

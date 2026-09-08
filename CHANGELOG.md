@@ -4,7 +4,17 @@
 
 ### Features/Changes
 
+- Added document highlight for LSPs which support this feature (<https://github.com/lapce/lapce/pull/3842>)
+- Built-in zero-config language servers: Photon now auto-starts servers found in PATH (rust-analyzer, clangd, gopls, typescript-language-server, lua-language-server, ...) with no plugin needed; toggle with `lsp.builtin` (Photon)
+- Settings show per-language LSP status (running / handled by plugin / found / not installed) under the LSP section (Photon)
+- File explorer takes keyboard focus: Enter renames and Delete moves the selected file to trash (Photon)
+- Document outline works without any language server via syntax-based symbols (LSP still wins when available) (Photon)
+- Links in hover docs (and plugin READMEs) are clickable and open in the browser (Photon)
+
 ### Bug Fixes
+
+- Fix panic when dragging the terminal panel to another dock area (<https://github.com/lapce/lapce/issues/3338>)
+- Fix commit messages being removed on failed git commit (<https://github.com/lapce/lapce/issues/3825>)
 
 ## 0.4.6
 

@@ -46,6 +46,7 @@ use crate::{
 };
 pub mod edit;
 pub mod highlight;
+pub mod symbols;
 pub mod util;
 
 const TREE_SITTER_MATCH_LIMIT: u32 = 256;

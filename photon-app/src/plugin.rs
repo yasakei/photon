@@ -19,7 +19,7 @@ use floem::{
     style::CursorStyle,
     views::{
         Decorators, container, dyn_container, dyn_stack, empty, img, label,
-        rich_text, scroll, stack, svg, text,
+        scroll, stack, svg, text,
     },
 };
 use indexmap::IndexMap;
@@ -38,6 +38,7 @@ use crate::{
     config::{PhotonConfig, color::PhotonColor},
     db::PhotonDb,
     editor::EditorData,
+    hover::clickable_hover_text,
     keypress::{KeyPressFocus, condition::Condition},
     main_split::Editors,
     markdown::{MarkdownContent, parse_markdown},
@@ -971,11 +972,14 @@ pub fn plugin_info_view(plugin: PluginData, volt: VoltID) -> impl View {
                                     )
                                 },
                                 move |content| match content {
-                                    MarkdownContent::Text(text_layout) => container(
-                                        rich_text(move || text_layout.clone())
-                                            .style(|s| s.width_full()),
-                                    )
-                                    .style(|s| s.width_full()),
+                                    MarkdownContent::Text { layout, links } => {
+                                        container(clickable_hover_text(
+                                            layout,
+                                            links,
+                                            internal_command,
+                                        ))
+                                        .style(|s| s.width_full())
+                                    }
                                     MarkdownContent::Image { .. } => {
                                         container(empty())
                                     }

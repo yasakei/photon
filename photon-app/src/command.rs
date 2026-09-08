@@ -601,6 +601,14 @@ pub enum PhotonWorkbenchCommand {
     #[strum(message = "Add Run Debug Config")]
     AddRunDebugConfig,
 
+    #[strum(serialize = "jump_highlight_next")]
+    #[strum(message = "Jump to next document highlight")]
+    JumpHighlightNext,
+
+    #[strum(serialize = "jump_highlight_prev")]
+    #[strum(message = "Jump to previous document highlight")]
+    JumpHighlightPrev,
+
     #[strum(serialize = "quick_jump_0")]
     #[strum(message = "Quick Jump 0 (Alt Quick Jump)")]
     QuickJump0,

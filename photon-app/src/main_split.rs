@@ -51,7 +51,7 @@ use crate::{
         ThemeColorSettingsId, VoltViewId,
     },
     keypress::{EventRef, KeyPressData, KeyPressHandle},
-    panel::implementation_view::ReferencesRoot,
+    panel::{implementation_view::ReferencesRoot, kind::PanelKind},
     window_tab::{CommonData, Focus, WindowTabData},
 };
 
@@ -677,7 +677,14 @@ impl MainSplitData {
         location: EditorLocation,
         edits: Option<Vec<TextEdit>>,
     ) {
-        if self.common.focus.get_untracked() != Focus::Workbench {
+        // Opening a file takes keyboard focus to the editor, except when
+        // the file explorer has focus (e.g. single-clicking a file and then
+        // using Enter/Delete on it) — stealing it back would break rename
+        // and trash from the keyboard.
+        if !matches!(
+            self.common.focus.get_untracked(),
+            Focus::Workbench | Focus::Panel(PanelKind::FileExplorer)
+        ) {
             self.common.focus.set(Focus::Workbench);
         }
         let path = location.path.clone();
